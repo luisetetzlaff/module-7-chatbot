@@ -7,48 +7,58 @@ document.addEventListener("DOMContentLoaded", () => {
       output(input);
     }
   });
+
+  // Language change event listener
+  const englishLanguageSelect = document.getElementById("english-button");
+  englishLanguageSelect.addEventListener("click", (e) => {
+    currentLanguage = "english";
+    inputField.placeholder = "Say something...";
+  });
+  const germanLanguageSelect = document.getElementById("german-button");
+  germanLanguageSelect.addEventListener("click", (e) => {
+    currentLanguage = "german";
+    inputField.placeholder = "Sagen Sie etwas...";
+  });
 });
+
+let currentLanguage = "english"; // Default language
 
 function output(input) {
   let product;
+  let text = input.toLowerCase().replace(/[^\w\säöüß]/gi, "").replace(/[\d]/gi, "").trim();
 
-  // Regex remove non word/space chars
-  // Trim trailing whitespce
-  // Remove digits - not sure if this is best
-  // But solves problem of entering something like 'hi1'
-
-  let text = input.toLowerCase().replace(/[^\w\s]/gi, "").replace(/[\d]/gi, "").trim();
-  text = text
-    .replace(/ a /g, " ")   // 'tell me a story' -> 'tell me story'
-    .replace(/i feel /g, "")
-    .replace(/whats/g, "what is")
-    .replace(/please /g, "")
-    .replace(/ please/g, "")
-    .replace(/r u/g, "are you");
-
-  if (compare(prompts, replies, text)) { 
-    // Search for exact match in `prompts`
-    product = compare(prompts, replies, text);
-  } else if (text.match(/thank/gi)) {
-    product = "You're welcome!"
-  } else if (text.match(/(corona|covid|virus)/gi)) {
-    // If no match, check if message contains `coronavirus`
-    product = coronavirus[Math.floor(Math.random() * coronavirus.length)];
+  if (currentLanguage === "german") {
+    if (compare(germanPrompts, germanReplies, currentLanguage, text)) {
+      product = compare(germanPrompts, germanReplies, currentLanguage, text);
+    } else if (text.match(/danke/gi)) {
+      product = "Bitte schön!";
+    } else if (text.match(/(recht|jura|anwalt|gerechtigkeit|studieren|DSGVO|datenschutz|regulieren)/gi)) {
+      product = germanLegal[Math.floor(Math.random() * germanLegal.length)];
+    } else {
+      product = germanAlternative[Math.floor(Math.random() * germanAlternative.length)];
+    }
   } else {
-    // If all else fails: random alternative
-    product = alternative[Math.floor(Math.random() * alternative.length)];
+    if (compare(englishPrompts, englishReplies, currentLanguage, text)) {
+      product = compare(englishPrompts, englishReplies, currentLanguage, text);
+    } else if (text.match(/thank/gi)) {
+      product = "You're welcome!";
+    } else if (text.match(/(law|jurisprudence|lawyer|justice|study|GDPR|data protection|regulate)/gi)) {
+      product = englishLegal[Math.floor(Math.random() * englishLegal.length)];
+    } else {
+      product = englishAlternative[Math.floor(Math.random() * englishAlternative.length)];
+    }
   }
-
-  // Update DOM
-  addChat(input, product);
+  addChat(input, product, currentLanguage); // Pass currentLanguage as an argument
 }
 
-function compare(promptsArray, repliesArray, string) {
+function compare(promptsArray, repliesArray, language, string) {
   let reply;
   let replyFound = false;
+  // Loop over the prompts array of the selected language
   for (let x = 0; x < promptsArray.length; x++) {
     for (let y = 0; y < promptsArray[x].length; y++) {
       if (promptsArray[x][y] === string) {
+        // If a match is found, retrieve the replies for that prompt
         let replies = repliesArray[x];
         reply = replies[Math.floor(Math.random() * replies.length)];
         replyFound = true;
@@ -64,7 +74,7 @@ function compare(promptsArray, repliesArray, string) {
   return reply;
 }
 
-function addChat(input, product) {
+function addChat(input, product, language) {
   const messagesContainer = document.getElementById("messages");
 
   let userDiv = document.createElement("div");
@@ -77,10 +87,17 @@ function addChat(input, product) {
   let botImg = document.createElement("img");
   let botText = document.createElement("span");
   botDiv.id = "bot";
-  botImg.src = "bot-mini.png";
+  botImg.src = "Bot_law_mini.png";
   botImg.className = "avatar";
   botDiv.className = "bot response";
-  botText.innerText = "Typing...";
+
+  // Set language-specific text for "typing..." message
+  if (language === "german") {
+    botText.innerText = "Schreibt...";
+  } else {
+    botText.innerText = "Typing...";
+  }
+
   botDiv.appendChild(botText);
   botDiv.appendChild(botImg);
   messagesContainer.appendChild(botDiv);
@@ -90,8 +107,7 @@ function addChat(input, product) {
   // Fake delay to seem "real"
   setTimeout(() => {
     botText.innerText = `${product}`;
-    textToSpeech(product)
-  }, 2000
-  )
-
+    textToSpeech(product);
+  }, 2000);
 }
+
